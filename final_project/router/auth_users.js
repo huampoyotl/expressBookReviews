@@ -48,9 +48,49 @@ regd_users.post("/login", (req,res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  const isbn=req.params.isbn;
+  const review=req.body.review;
+    let book=Object.keys(books).filter(i => {return books[i].ISBN===isbn });
+    if(book.length>0){
+        let bookId=book[0];
+        book=books[bookId]
+        let reviews=book.reviews;
+        let user=req.session.authorization.username;
+        reviews[user]=review;
+        book.reviews=reviews;
+        books={...books,
+            bookId: book
+        }
+        return res.status(400).json({message: "Review registered for "+book.title+" on behalf of "+user});
+    }else{
+        return res.status(400).json({message: "Book not found, given ISBN: "+isbn});
+    }
 });
+
+// Delete a book review
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn=req.params.isbn;
+      let book=Object.keys(books).filter(i => {return books[i].ISBN===isbn });
+      if(book.length>0){
+          let bookId=book[0];
+          book=books[bookId]
+          let reviews=book.reviews;
+          let user=req.session.authorization.username;
+          if(reviews[user]){
+            delete reviews[user];
+            book.reviews=reviews;
+            books={...books,
+                bookId: book
+            }
+            return res.status(400).json({message: user+"'s review deleted for "+book.title});
+
+          }else{
+            return res.status(400).json({message: user+"'s doesn't have any review for "+book.title});
+          }
+      }else{
+          return res.status(400).json({message: "Book not found, given ISBN: "+isbn});
+      }
+  });
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
